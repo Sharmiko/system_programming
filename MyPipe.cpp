@@ -142,14 +142,14 @@ int main()
     }
     else if (process_a == -1)
     {
-        // error occured
+        // error occurred
         std::cerr << "Could not create process: Error!" << std::endl;
         std::exit(-1);
     }
     else 
     {
         // Parent process
-        wait(NULL);
+        wait(nullptr);
 
         process_b = fork();
         if (process_b == 0)
@@ -170,14 +170,14 @@ int main()
         }
         else if (process_b == -1)
         {
-            // error occured
+            // error occurred
             std::cerr << "Could not create process: Error!" << std::endl;
             std::exit(-1);
         }
         else
         {
             // Parent process
-            wait(NULL);
+            wait(nullptr);
         }
     }
 }
