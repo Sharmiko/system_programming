@@ -95,24 +95,10 @@ void read_data(MyPipe &myPipe, int input_type, std::string process_name)
     {
         std::cout << "reading data from file" << std::endl;
         std::ifstream file(INPUT_FILE);
-        std::string text;
         int buff[INPUT_SIZE];
-        int i = 0;
-        while (std::getline(file, text))
+        for (int i = 0; i < INPUT_SIZE; ++i)
         {
-            for (char c : text)
-            {
-
-                if (isdigit(c))
-                {
-                    buff[i] = (int) c - 48;
-                    i += 1;
-                    if (i == INPUT_SIZE)
-                    {
-                        break;
-                    }
-                }
-            }
+            file >> buff[i];
         }
         myPipe.writeData(*buff);
     }
