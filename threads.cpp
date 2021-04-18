@@ -6,7 +6,6 @@
 #include <iostream>
 #include <algorithm>
 #include <condition_variable>
-#include <gsl/gsl>
 
 #include <unistd.h>
 #include <pthread.h>
