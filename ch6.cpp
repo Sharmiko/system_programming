@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <iomanip>
+#include <sstream>
 #include <iostream>
 
 
@@ -58,7 +59,7 @@ const void fatal(void(*func)())
     {
         std::cout << "\033[1;31mFATAL ERROR\033[0m ";
         func();
-        std::exit(-1);
+        //std::exit(-1);
     };
 }
 
@@ -118,6 +119,28 @@ std::istream &operator>>(std::istream &is, buf_t<N> &b)
 }
 
 
+template<typename FUNC>
+void cout_transaction(FUNC f)
+{
+    auto flags = std::cout.flags();
+    f();
+    std::cout.flags(flags);
+}
+
+
+namespace usr 
+{
+    class hex_t {} hex;
+}
+
+std::ostream &operator<<(std::ostream &os, const usr::hex_t &obj)
+{
+    os << std::hex << std::showbase << std::internal
+        << std::setfill('0') << std::setw(18);
+
+    return os;
+}
+
 int main()
 {
 
@@ -132,10 +155,10 @@ int main()
     // std::cout << obj;
 
     char buf[2];
-    scanf("%2s", buf);
+    //scanf("%2s", buf);
 
     buf_t<2> buf2;
-    std::cin >> buf2;
+    // std::cin >> buf2;
 
     DEBUG("The answer is: %d\n", 42);
     DEBUG("The answer is: %d\n", 43);
@@ -166,5 +189,43 @@ int main()
         console << "The answer was not: " << 48 << "\n";
     });
 
+
+    // stream optimization
+
+    std::stringstream stream;
+    stream << "The answer is: " << 100 << "\n";
+    std::cout << stream.str() << std::flush;
+
+    std::clog << "The answer is: " << 42 << "\n";
+
+    std::cout << std::boolalpha;
+    std::cout << "Boolapha: " << true << "\n";
+
+    std::cout << std::noboolalpha;
+    std::cout << "No Boolapha: " << true << "\n";
+
+    std::cout << "The answer is: " << std::setw(18) << 42 << "\n";
+    std::cout << "The answer is: " << std::setw(18) << std::setfill('0') << 42 << "\n";
+    
+    std::cout << "The answer is: " << 
+        std::setw(18) << std::left << std::setfill('0') << 42 << "\n";
+    
+    std::cout << "The answer is: " << 
+        std::setw(18) << std::right << std::setfill('0') << 42 << "\n";
+
+    std::cout << "The answer is: " << 
+        std::setw(18) << std::internal << std::setfill('0') << 42 << "\n";
+
+
+    auto flags = std::cout.flags(); // get flags
+    std::cout.flags(flags); // restore flags 
+
+    cout_transaction([] {
+        std::cout << std::hex << std::showbase;
+        std::cout << "The answer is: " << 42 << "\n";
+    });
+
+    std::cout << "The answer is: " << usr::hex << 42 << "\n";
+    
     return 0;
 }
