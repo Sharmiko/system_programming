@@ -1,3 +1,5 @@
+#include <memory>
+#include <thread>
 #include <iostream>
 
 
@@ -6,13 +8,46 @@ int bss_mem = 0;
 
 class myclass
 {
+private:
+    int m_data{0};
 public:
     ~myclass()
     {
         std::cout << "my delete\n";
     }
+
+    void inc()
+    {
+        this->m_data++;
+    }
 };
 
+    
+std::thread t1;
+std::thread t2;
+
+void thread2(const std::shared_ptr<myclass> ptr)
+{
+    for (auto i = 0; i < 100000; ++i)
+    {
+        ptr->inc();
+    }
+
+    std::cout << "Thread2: complete\n";
+}
+
+void thread1()
+{
+    auto ptr = std::make_shared<myclass>();
+    t2 = std::thread(thread2, ptr);
+
+    for (auto i = 0; i < 10; ++i)
+    {
+        ptr->inc();
+    }
+
+    std::cout << "thread1: complete\n";
+}
 
 using aligned_int alignas(0x1000) = int;
 
@@ -30,8 +65,21 @@ void operator delete(void *ptr)
 }
 
 
+class int_deleter
+{
+public:
+    void operator()(int *ptr) const 
+    {
+        std::cout << "my delete\n";
+        delete ptr;
+    }
+};
+
+
 int main()
 {
+
+    auto flags = std::cout.flags();
     // stack memory
     int stack_mem = 42;
 
@@ -90,7 +138,24 @@ int main()
     auto ptr11 = new (buf) int;
     std::cout << ptr11 << "\n";
 
+    std::cout.flags(flags);
+
     
+    // smart pointers
+    auto ptr12 = std::make_unique<int>(42);    
+    std::cout << *ptr12 << "\n";
+
+    auto ptr13 = std::unique_ptr<int, int_deleter>(new int, int_deleter());
+    std::cout << ptr13.get() << "\n";
+
+    
+    // shared pointers
+
+
+    t1 = std::thread(thread1);
+
+    t1.join();
+    t2.join();
 
 
     return 0;
