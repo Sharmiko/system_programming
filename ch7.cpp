@@ -1,7 +1,82 @@
 #include <memory>
 #include <thread>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 #include <iostream>
+#include <sys/mman.h>
 
+
+constexpr auto PROT_RW = PROT_READ | PROT_WRITE;
+constexpr auto PROT_RE = PROT_READ | PROT_EXEC;
+constexpr auto MAP_ALLOC = MAP_PRIVATE | MAP_ANONYMOUS;
+
+
+auto name = "/shm";
+
+
+class mmap_deleter
+{
+private:
+    std::size_t m_size;
+public:
+    mmap_deleter(std::size_t size) : m_size{size} {}
+
+    void operator()(int *ptr)
+    {
+        munmap(ptr, m_size);
+    }
+};
+
+template<typename T, typename... Args>
+auto mmap_unique(Args&&... args)
+{
+    if (auto ptr = mmap(0, sizeof(T), PROT_RW, MAP_ALLOC, -1, 0))
+    {
+        auto obj = new (ptr) T(args...);
+        auto del = mmap_deleter(sizeof(T));
+        return std::unique_ptr<T, mmap_deleter>(obj, del);
+    }
+
+    throw std::bad_alloc();
+}
+
+template<typename T, typename... Args>
+auto mmap_unique_server(Args&&... args)
+{
+    if (int fd = shm_open(name, O_CREAT | O_RDWR, 0644); fd != -1)
+    {
+        ftruncate(fd, sizeof(T));
+        if (auto ptr = mmap(0, sizeof(T), PROT_RW, MAP_SHARED, fd, 0))
+        {
+            auto obj = new (ptr) T(args...);
+            auto del = mmap_deleter(sizeof(T));
+
+            return std::unique_ptr<T, mmap_deleter>(obj, del);
+        }
+    }
+
+    throw std::bad_alloc();
+}
+
+template<typename T>
+auto mmap_unique_client()
+{
+    if (int fd = shm_open(name, O_RDWR, 0644); fd != -1)
+    {
+        ftruncate(fd, sizeof(T));
+
+        if (auto ptr = mmap(0, sizeof(T), PROT_RW, MAP_SHARED, fd, 0))
+        {
+            auto obj = static_cast<T*>(ptr);
+            auto del = mmap_deleter(sizeof(T));
+
+            return std::unique_ptr<T, mmap_deleter>(obj, del);
+        }
+    }
+
+    throw std::bad_alloc();
+}
 
 // global memory
 int bss_mem = 0;
@@ -152,11 +227,45 @@ int main()
     // shared pointers
 
 
-    t1 = std::thread(thread1);
+    //t1 = std::thread(thread1);
 
-    t1.join();
-    t2.join();
+    //t1.join();
+    //t2.join();
 
+
+    // Mappings and Permissions
+
+    auto ptr14 = mmap(0, 0x1000, PROT_RW, MAP_ALLOC, -1, 0);
+    std::cout << "ptr14: " << ptr14 << "\n";
+
+    auto ptr15 = mmap(0, 42, PROT_RW, MAP_ALLOC, -1, 0);
+    auto ptr16 = mmap(0, 42, PROT_RW, MAP_ALLOC, -1, 0);
+
+    std::cout << ptr15 << "\n";
+    std::cout << ptr16 << "\n";
+
+    munmap(ptr15, 42);
+    munmap(ptr16, 42);
+
+    auto ptr17 = mmap(0, 0x1000, PROT_RW, MAP_ALLOC, -1, 0);
+    std::cout << ptr17 << "\n";
+
+    if (mprotect(ptr17, 0x1000, PROT_READ) == -1)
+    {
+        std::clog << "ERROR: Failed to change memory permissions\n";
+        std::exit(EXIT_FAILURE);
+    }
+
+    munmap(ptr17, 0x1000);
+
+    auto ptr18 = mmap_unique<int>(42);
+    std::cout << *ptr18 << "\n";
+
+
+    auto ptr19 = mmap_unique_server<int>(42);
+    auto ptr20 = mmap_unique_client<int>();
+    std::cout << *ptr19 << "\n";
+    std::cout << *ptr20 << "\n";
 
     return 0;
 }
