@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <filesystem>
 
 
 struct myclass
@@ -209,6 +210,40 @@ int main()
         file << '\n';
         std::cout << file.tellp() << '\n';
     }
+
+
+    // file utilities
+
+    std::cout << std::filesystem::is_block_file("/dev/sda1") << '\n';
+    std::cout << std::filesystem::is_character_file("/dev/random") << '\n';
+    std::cout << std::filesystem::is_directory("/dev") << '\n';
+    std::cout << std::filesystem::is_empty("/dev") << '\n';
+    std::cout << std::filesystem::is_fifo("ch1.cpp") << '\n';
+    std::cout << std::filesystem::is_other("ch1.cpp") << '\n';
+    std::cout << std::filesystem::is_regular_file("ch1.cpp") << '\n';
+    std::cout << std::filesystem::is_socket("ch1.cpp") << '\n';
+    std::cout << std::filesystem::is_symlink("ch1.cpp") << '\n';
+
+    std::cout << std::filesystem::exists("/dev") << '\n';
+
+    std::cout << std::filesystem::current_path() << '\n';
+    std::cout << std::filesystem::relative(std::filesystem::current_path()) << '\n';
+    
+    std::cout << std::filesystem::canonical(".") << '\n';
+
+
+    auto path = std::filesystem::current_path();
+    path /= "temp.cpp";
+
+    std::cout << path << '\n';
+
+
+    for (const auto &p: std::filesystem::directory_iterator(std::filesystem::current_path()))
+    {
+        std::cout << p << '\n';
+    }
+
+    
 
     return 0;
 }
