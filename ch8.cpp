@@ -1,5 +1,8 @@
+#include <string.h>
+
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 
 struct myclass
@@ -16,6 +19,17 @@ std::fstream &operator>>(std::fstream &is, myclass &obj)
 
     return is;
 }
+
+
+std::fstream &operator<<(std::fstream &os, const myclass &obj)
+{
+    os << obj.hello;
+    os << ' ';
+    os << obj.world;
+
+    return os;
+}
+
 
 std::ostream &operator<<(std::ostream &os, const myclass &obj)
 {
@@ -37,6 +51,19 @@ void myread(std::fstream &file, T (&str)[N], std::size_t count)
 
     file.read(static_cast<char *>(str), count);
 }
+
+
+void mywrite(std::fstream &file, const char *str, std::size_t count)
+{
+    if (count > std::strlen(str))
+    {
+        std::cerr << count << " " << std::strlen(str) << '\n';
+        throw std::out_of_range("file.write out of boounds");
+    }
+
+    file.write(str, count);
+}
+
 
 int main()
 {   
@@ -129,6 +156,59 @@ int main()
         std::cout << str << '\n';
     }
 
+
+    // writing to a file 
+
+
+    if (auto file = std::fstream("test.txt"))
+    {
+        std::string hello = {"Hello"};
+        std::string world = {"World"};
+        file << hello << " " << world << " " << 42 << '\n';
+    }
+
+
+    if (auto file = std::fstream("test.txt"))
+    {
+        myclass obj;
+        obj.hello = "Hey";
+        obj.world = "World";
+        file << obj << '\n';
+    }
+
+
+    if (auto file = std::fstream("test.txt"))
+    {
+        file.put('H');
+        file.put('\n');
+        file.write("hello world\n", 12);
+    }
+
+
+    if (auto file = std::fstream("test.txt"))
+    {
+        //mywrite(file, "Hello World\n", 100);
+        const char str1[6] = {'H', 'e', 'l', 'l', 'o', '\n'};
+        const char str2[6] = {'#', '#', '#', '#', '#', '\n'};
+
+        mywrite(file, str1, 12);
+        mywrite(file, str2, 6);
+    }
+
+
+    if (auto file = std::fstream("test.txt"))
+    {
+        std::cout << file.tellp() << '\n';
+        file << "Hello";
+        std::cout << file.tellp() << '\n';
+        file << ' ';
+        std::cout << file.tellp() << '\n';
+        file.seekp(0);
+        file << "World";
+        std::cout << file.tellp() << '\n';
+        file << '\n';
+        std::cout << file.tellp() << '\n';
+    }
 
     return 0;
 }
